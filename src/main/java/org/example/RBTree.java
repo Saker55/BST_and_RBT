@@ -1,17 +1,24 @@
 package org.example;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class RBTree extends tree {
+
+    private static final Logger log = LoggerFactory.getLogger(RBTree.class);
 
     private final RBNode NIL;
 
     public RBTree() {
-        NIL = new RBNode(0, null, null, null, true); // black NIL
+        NIL = new RBNode(0, null, null, null, true); // sentinel black NIL node
         setRoot(NIL);
     }
 
     @Override
     public boolean insert(int v) {
-        RBNode z = new RBNode(v, NIL, NIL, NIL, false);
+        log.debug("insert({})", v);
+
+        RBNode z = new RBNode(v, NIL, NIL, NIL, false); // new red node
         RBNode y = NIL;
         RBNode x = (RBNode) getRoot();
 
@@ -22,6 +29,7 @@ public class RBTree extends tree {
             } else if (z.getVal() > x.getVal()) {
                 x = (RBNode) x.getRight();
             } else {
+                log.debug("insert({}) — duplicate, ignored", v);
                 return false;
             }
         }
@@ -46,32 +54,42 @@ public class RBTree extends tree {
                 RBNode y = (RBNode) z.getParent().getParent().getRight();
 
                 if (!y.isblack()) {
+                    // Case 1: uncle is red — recolour
+                    log.debug("InsertFixup case 1 (left): recolour at node {}", z.getVal());
                     ((RBNode) z.getParent()).setblack(true);
                     y.setblack(true);
                     ((RBNode) z.getParent().getParent()).setblack(false);
                     z = (RBNode) z.getParent().getParent();
                 } else {
                     if (z == z.getParent().getRight()) {
+                        // Case 2: uncle is black, z is right child — left-rotate parent
+                        log.debug("InsertFixup case 2 (left): left-rotate at node {}", z.getParent().getVal());
                         z = (RBNode) z.getParent();
                         leftRotate(z);
                     }
+                    // Case 3: uncle is black, z is left child — right-rotate grandparent
+                    log.debug("InsertFixup case 3 (left): right-rotate at node {}", z.getParent().getParent().getVal());
                     ((RBNode) z.getParent()).setblack(true);
                     ((RBNode) z.getParent().getParent()).setblack(false);
                     rightRotate(z.getParent().getParent());
                 }
             } else {
+                // Mirror image
                 RBNode y = (RBNode) z.getParent().getParent().getLeft();
 
                 if (!y.isblack()) {
+                    log.debug("InsertFixup case 1 (right): recolour at node {}", z.getVal());
                     ((RBNode) z.getParent()).setblack(true);
                     y.setblack(true);
                     ((RBNode) z.getParent().getParent()).setblack(false);
                     z = (RBNode) z.getParent().getParent();
                 } else {
                     if (z == z.getParent().getLeft()) {
+                        log.debug("InsertFixup case 2 (right): right-rotate at node {}", z.getParent().getVal());
                         z = (RBNode) z.getParent();
                         rightRotate(z);
                     }
+                    log.debug("InsertFixup case 3 (right): left-rotate at node {}", z.getParent().getParent().getVal());
                     ((RBNode) z.getParent()).setblack(true);
                     ((RBNode) z.getParent().getParent()).setblack(false);
                     leftRotate(z.getParent().getParent());
@@ -82,7 +100,9 @@ public class RBTree extends tree {
     }
 
     @Override
-    boolean delete(int v) {
+    public boolean delete(int v) {
+        log.debug("delete({})", v);
+
         RBNode z = (RBNode) getRoot();
 
         while (z != NIL && z.getVal() != v) {
@@ -93,7 +113,10 @@ public class RBTree extends tree {
             }
         }
 
-        if (z == NIL) return false;
+        if (z == NIL) {
+            log.debug("delete({}) — not found", v);
+            return false;
+        }
 
         delete(z);
         return true;
@@ -129,6 +152,8 @@ public class RBTree extends tree {
             y.setblack(z.isblack());
         }
 
+        log.debug("delete: successor y={}, yOriginalBlack={}", y.getVal(), yOriginalBlack);
+
         if (yOriginalBlack) {
             deleteFixup(x);
         }
@@ -140,24 +165,26 @@ public class RBTree extends tree {
                 RBNode w = (RBNode) x.getParent().getRight();
 
                 if (!w.isblack()) {
+                    log.debug("deleteFixup case 1 (left): sibling {} is red", w.getVal());
                     w.setblack(true);
                     ((RBNode) x.getParent()).setblack(false);
                     leftRotate(x.getParent());
                     w = (RBNode) x.getParent().getRight();
                 }
 
-                if (((RBNode) w.getLeft()).isblack() &&
-                        ((RBNode) w.getRight()).isblack()) {
+                if (((RBNode) w.getLeft()).isblack() && ((RBNode) w.getRight()).isblack()) {
+                    log.debug("deleteFixup case 2 (left): sibling {} both children black", w.getVal());
                     w.setblack(false);
                     x = (RBNode) x.getParent();
                 } else {
                     if (((RBNode) w.getRight()).isblack()) {
+                        log.debug("deleteFixup case 3 (left): right-rotate sibling {}", w.getVal());
                         ((RBNode) w.getLeft()).setblack(true);
                         w.setblack(false);
                         rightRotate(w);
                         w = (RBNode) x.getParent().getRight();
                     }
-
+                    log.debug("deleteFixup case 4 (left): left-rotate parent {}", x.getParent().getVal());
                     w.setblack(((RBNode) x.getParent()).isblack());
                     ((RBNode) x.getParent()).setblack(true);
                     ((RBNode) w.getRight()).setblack(true);
@@ -168,24 +195,26 @@ public class RBTree extends tree {
                 RBNode w = (RBNode) x.getParent().getLeft();
 
                 if (!w.isblack()) {
+                    log.debug("deleteFixup case 1 (right): sibling {} is red", w.getVal());
                     w.setblack(true);
                     ((RBNode) x.getParent()).setblack(false);
                     rightRotate(x.getParent());
                     w = (RBNode) x.getParent().getLeft();
                 }
 
-                if (((RBNode) w.getRight()).isblack() &&
-                        ((RBNode) w.getLeft()).isblack()) {
+                if (((RBNode) w.getRight()).isblack() && ((RBNode) w.getLeft()).isblack()) {
+                    log.debug("deleteFixup case 2 (right): sibling {} both children black", w.getVal());
                     w.setblack(false);
                     x = (RBNode) x.getParent();
                 } else {
                     if (((RBNode) w.getLeft()).isblack()) {
+                        log.debug("deleteFixup case 3 (right): left-rotate sibling {}", w.getVal());
                         ((RBNode) w.getRight()).setblack(true);
                         w.setblack(false);
                         leftRotate(w);
                         w = (RBNode) x.getParent().getLeft();
                     }
-
+                    log.debug("deleteFixup case 4 (right): right-rotate parent {}", x.getParent().getVal());
                     w.setblack(((RBNode) x.getParent()).isblack());
                     ((RBNode) x.getParent()).setblack(true);
                     ((RBNode) w.getLeft()).setblack(true);
@@ -205,6 +234,7 @@ public class RBTree extends tree {
     }
 
     private void leftRotate(Node x) {
+        log.debug("leftRotate({})", x.getVal());
         Node y = x.getRight();
         x.setRight(y.getLeft());
 
@@ -227,6 +257,7 @@ public class RBTree extends tree {
     }
 
     private void rightRotate(Node y) {
+        log.debug("rightRotate({})", y.getVal());
         Node x = y.getLeft();
         y.setLeft(x.getRight());
 

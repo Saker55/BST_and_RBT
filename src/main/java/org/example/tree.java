@@ -19,7 +19,7 @@ public abstract class tree {
     abstract boolean insert(int v);
     abstract boolean delete(int v);
 
-    boolean contains(int v){
+    public boolean contains(int v){
         return contains(root,v);
     }
 
