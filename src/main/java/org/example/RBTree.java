@@ -1,243 +1,246 @@
 package org.example;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class RBTree extends tree{
+public class RBTree extends tree {
+
+    private final RBNode NIL;
+
+    public RBTree() {
+        NIL = new RBNode(0, null, null, null, true); // black NIL
+        setRoot(NIL);
+    }
 
     @Override
     public boolean insert(int v) {
-        RBNode y = null;
-        RBNode z = new RBNode(v,null,null, null, false);
-        RBNode x = new RBNode(getRoot().getVal(),getRoot().getParent(),getRoot().getLeft(), getRoot().getRight(), true);
-        while (x != null) {
+        RBNode z = new RBNode(v, NIL, NIL, NIL, false);
+        RBNode y = NIL;
+        RBNode x = (RBNode) getRoot();
+
+        while (x != NIL) {
             y = x;
             if (z.getVal() < x.getVal()) {
                 x = (RBNode) x.getLeft();
-            }
-            else {
+            } else if (z.getVal() > x.getVal()) {
                 x = (RBNode) x.getRight();
+            } else {
+                return false;
             }
         }
+
         z.setParent(y);
-        if (y == null) {
+
+        if (y == NIL) {
             setRoot(z);
-        }
-        else if (z.getVal() < y.getVal()) {
+        } else if (z.getVal() < y.getVal()) {
             y.setLeft(z);
-        }
-        else if (z.getVal() > y.getVal()) {
+        } else {
             y.setRight(z);
         }
-        else {
-            return false;
-        }
-        z.setLeft(null);
-        z.setRight(null);
-        z.setblack(false);
+
         InsertFixup(z);
-        return true ;
+        return true;
+    }
+
+    private void InsertFixup(RBNode z) {
+        while (!((RBNode) z.getParent()).isblack()) {
+            if (z.getParent() == z.getParent().getParent().getLeft()) {
+                RBNode y = (RBNode) z.getParent().getParent().getRight();
+
+                if (!y.isblack()) {
+                    ((RBNode) z.getParent()).setblack(true);
+                    y.setblack(true);
+                    ((RBNode) z.getParent().getParent()).setblack(false);
+                    z = (RBNode) z.getParent().getParent();
+                } else {
+                    if (z == z.getParent().getRight()) {
+                        z = (RBNode) z.getParent();
+                        leftRotate(z);
+                    }
+                    ((RBNode) z.getParent()).setblack(true);
+                    ((RBNode) z.getParent().getParent()).setblack(false);
+                    rightRotate(z.getParent().getParent());
+                }
+            } else {
+                RBNode y = (RBNode) z.getParent().getParent().getLeft();
+
+                if (!y.isblack()) {
+                    ((RBNode) z.getParent()).setblack(true);
+                    y.setblack(true);
+                    ((RBNode) z.getParent().getParent()).setblack(false);
+                    z = (RBNode) z.getParent().getParent();
+                } else {
+                    if (z == z.getParent().getLeft()) {
+                        z = (RBNode) z.getParent();
+                        rightRotate(z);
+                    }
+                    ((RBNode) z.getParent()).setblack(true);
+                    ((RBNode) z.getParent().getParent()).setblack(false);
+                    leftRotate(z.getParent().getParent());
+                }
+            }
+        }
+        ((RBNode) getRoot()).setblack(true);
     }
 
     @Override
     boolean delete(int v) {
-        RBNode y = null;
-        RBNode x = new RBNode(getRoot().getVal(),getRoot().getParent(),getRoot().getLeft(), getRoot().getRight(), true);
-        while (x != null && x.getVal() != v) {
-            y = x;
-            if (v < x.getVal()) {
-                x = (RBNode) x.getLeft();
-            }
-            else {
-                x = (RBNode) x.getRight();
+        RBNode z = (RBNode) getRoot();
+
+        while (z != NIL && z.getVal() != v) {
+            if (v < z.getVal()) {
+                z = (RBNode) z.getLeft();
+            } else {
+                z = (RBNode) z.getRight();
             }
         }
 
-        if (x == null){
-            return false;
-        }
+        if (z == NIL) return false;
 
-        delete(x);
+        delete(z);
         return true;
     }
-
-    private void InsertFixup(RBNode z){
-        while (!(((RBNode) z.getParent()).isblack()))
-            if (z.getParent() == z.getParent().getParent().getLeft()) {
-                RBNode y = (RBNode) (z.getParent().getParent().getRight());
-                if (!y.isblack()) {
-                    ((RBNode) z.getParent()).setblack(true);                    // case 1
-                    y.setblack(true);                                           // case 1
-                   ((RBNode) z.getParent().getParent()).setblack(false);        // case 1
-                    z = (RBNode) (z.getParent().getParent());                   // case 1
-                }                                                               // case 1
-                else if (z == z.getParent().getRight()) {
-                    z = (RBNode) z.getParent();                                 // case 2
-                    leftRotate(z);                                              // case 2
-                }                                                               // case 2
-                ((RBNode) z.getParent()).setblack(true);                        // case 3
-                ((RBNode) z.getParent().getParent()).setblack(false);           // case 3
-                rightRotate(z.getParent().getParent());                         // case 3
-            }                                                                   // case 3
-            else {
-                RBNode y = (RBNode) (z.getParent().getParent().getLeft());
-                if (!y.isblack()) {
-                    ((RBNode) z.getParent()).setblack(true);                    // case 1
-                    y.setblack(true);                                           // case 1
-                    ((RBNode) z.getParent().getParent()).setblack(false);       // case 1
-                    z = (RBNode) (z.getParent().getParent());                   // case 1
-                }                                                               // case 1
-                else if (z == z.getParent().getLeft()) {
-                    z = (RBNode) z.getParent();                                 // case 2
-                    leftRotate(z);                                              // case 2
-                }                                                               // case 2
-                ((RBNode) z.getParent()).setblack(true);                        // case 3
-                ((RBNode) z.getParent().getParent()).setblack(false);           // case 3
-                rightRotate(z.getParent().getParent());
-            }
-        ((RBNode)getRoot()).setblack(true);
-    }
-
 
     private void delete(RBNode z) {
         RBNode y = z;
         RBNode x;
-        boolean y_original_color = y.isblack();
-        if (z.getLeft() == null) {
+        boolean yOriginalBlack = y.isblack();
+
+        if (z.getLeft() == NIL) {
             x = (RBNode) z.getRight();
             transplant(z, z.getRight());
-        }
-        else if (z.getRight() == null) {
+        } else if (z.getRight() == NIL) {
             x = (RBNode) z.getLeft();
             transplant(z, z.getLeft());
-        }
-        else {
+        } else {
             y = (RBNode) min(z.getRight());
-            y_original_color = y.isblack();
+            yOriginalBlack = y.isblack();
             x = (RBNode) y.getRight();
+
             if (y.getParent() == z) {
                 x.setParent(y);
-            }
-            else {
+            } else {
                 transplant(y, y.getRight());
                 y.setRight(z.getRight());
                 y.getRight().setParent(y);
             }
-                transplant( z, y);
-                y.setLeft(z.getLeft());
-                y.getLeft().setParent(y);
-                y.setblack(z.isblack());
+
+            transplant(z, y);
+            y.setLeft(z.getLeft());
+            y.getLeft().setParent(y);
+            y.setblack(z.isblack());
         }
-        if( y_original_color) {
+
+        if (yOriginalBlack) {
             deleteFixup(x);
         }
     }
 
-    private void deleteFixup(RBNode x){
+    private void deleteFixup(RBNode x) {
         while (x != getRoot() && x.isblack()) {
             if (x == x.getParent().getLeft()) {
-                RBNode w = (RBNode)x.getParent().getRight();
+                RBNode w = (RBNode) x.getParent().getRight();
+
                 if (!w.isblack()) {
-                    w.setblack(true);                         // case 1
-                    ((RBNode)x.getParent()).setblack(false) ;                        // case 1
-                    leftRotate(x.getParent());                      // case 1
+                    w.setblack(true);
+                    ((RBNode) x.getParent()).setblack(false);
+                    leftRotate(x.getParent());
                     w = (RBNode) x.getParent().getRight();
-                }// case 1
-                if (((RBNode) w.getLeft()).isblack() && ((RBNode)w.getRight()).isblack())
-                {
-                    w.setblack(false);                            // case 2
+                }
+
+                if (((RBNode) w.getLeft()).isblack() &&
+                        ((RBNode) w.getRight()).isblack()) {
+                    w.setblack(false);
                     x = (RBNode) x.getParent();
-                }                // case 2
-                else if (((RBNode)w.getRight()).isblack()) {
-                    ((RBNode) w.getLeft()).setblack(true);                     // case 3
-                    w.setblack(false);                            // case 3
-                    rightRotate(w);                       // case 3
-                    w = (RBNode) x.getParent().getRight();
-                }                          // case 3
-                w.setblack(((RBNode) x.getParent()).isblack());                         // case 4
-                ((RBNode) x.getParent()).setblack(true);                            // case 4
-                ((RBNode) w.getRight()).setblack(true);                        // case 4
-                leftRotate(x.getParent());                          // case 4
-                x = (RBNode) getRoot();
+                } else {
+                    if (((RBNode) w.getRight()).isblack()) {
+                        ((RBNode) w.getLeft()).setblack(true);
+                        w.setblack(false);
+                        rightRotate(w);
+                        w = (RBNode) x.getParent().getRight();
+                    }
+
+                    w.setblack(((RBNode) x.getParent()).isblack());
+                    ((RBNode) x.getParent()).setblack(true);
+                    ((RBNode) w.getRight()).setblack(true);
+                    leftRotate(x.getParent());
+                    x = (RBNode) getRoot();
+                }
             } else {
-                RBNode w = (RBNode)x.getParent().getLeft();
+                RBNode w = (RBNode) x.getParent().getLeft();
+
                 if (!w.isblack()) {
-                    w.setblack(true);                         // case 1
-                    ((RBNode)x.getParent()).setblack(false) ;                        // case 1
-                    leftRotate(x.getParent());                      // case 1
+                    w.setblack(true);
+                    ((RBNode) x.getParent()).setblack(false);
+                    rightRotate(x.getParent());
                     w = (RBNode) x.getParent().getLeft();
-                }// case 1
-                if (((RBNode) w.getRight()).isblack() && ((RBNode)w.getLeft()).isblack())
-                {
-                    w.setblack(false);                            // case 2
+                }
+
+                if (((RBNode) w.getRight()).isblack() &&
+                        ((RBNode) w.getLeft()).isblack()) {
+                    w.setblack(false);
                     x = (RBNode) x.getParent();
-                }                // case 2
-                else if (((RBNode)w.getLeft()).isblack()) {
-                    ((RBNode) w.getRight()).setblack(true);                     // case 3
-                    w.setblack(false);                            // case 3
-                    rightRotate(w);                       // case 3
-                    w = (RBNode) x.getParent().getLeft();
-                }                          // case 3
-                w.setblack(((RBNode) x.getParent()).isblack());                         // case 4
-                ((RBNode) x.getParent()).setblack(true);                            // case 4
-                ((RBNode) w.getRight()).setblack(true);                        // case 4
-                leftRotate(x.getParent());                          // case 4
-                x = (RBNode) getRoot();
+                } else {
+                    if (((RBNode) w.getLeft()).isblack()) {
+                        ((RBNode) w.getRight()).setblack(true);
+                        w.setblack(false);
+                        leftRotate(w);
+                        w = (RBNode) x.getParent().getLeft();
+                    }
+
+                    w.setblack(((RBNode) x.getParent()).isblack());
+                    ((RBNode) x.getParent()).setblack(true);
+                    ((RBNode) w.getLeft()).setblack(true);
+                    rightRotate(x.getParent());
+                    x = (RBNode) getRoot();
+                }
             }
         }
         x.setblack(true);
     }
 
     private Node min(Node x) {
-        Node y = x;
-        while (y.getLeft() != null){
-            y = y.getLeft();
+        while (x.getLeft() != NIL) {
+            x = x.getLeft();
         }
-        return y;
+        return x;
     }
 
-    private void leftRotate(Node x){
+    private void leftRotate(Node x) {
         Node y = x.getRight();
         x.setRight(y.getLeft());
 
-        if( y.getLeft() != null){
+        if (y.getLeft() != NIL) {
             y.getLeft().setParent(x);
         }
 
         y.setParent(x.getParent());
 
-        if (x.getParent() == null){
+        if (x.getParent() == NIL) {
             setRoot(y);
-        }
-        else if(x == x.getParent().getLeft()){
+        } else if (x == x.getParent().getLeft()) {
             x.getParent().setLeft(y);
-        }
-        else {
+        } else {
             x.getParent().setRight(y);
         }
+
         y.setLeft(x);
         x.setParent(y);
     }
 
-
-
-
-    private void rightRotate(Node y){
+    private void rightRotate(Node y) {
         Node x = y.getLeft();
         y.setLeft(x.getRight());
 
-        if( x.getRight() != null){
+        if (x.getRight() != NIL) {
             x.getRight().setParent(y);
         }
 
         x.setParent(y.getParent());
 
-        if (y.getParent() == null){
+        if (y.getParent() == NIL) {
             setRoot(x);
-        }
-        else if(y == y.getParent().getLeft()){
+        } else if (y == y.getParent().getLeft()) {
             y.getParent().setLeft(x);
-        }
-        else {
+        } else {
             y.getParent().setRight(x);
         }
 
@@ -245,15 +248,12 @@ public class RBTree extends tree{
         y.setParent(x);
     }
 
-    private void transplant(Node u,Node v) {
-        if (u.getParent() == null) {
+    private void transplant(Node u, Node v) {
+        if (u.getParent() == NIL) {
             setRoot(v);
-        }
-        else if (u == u.getParent().getLeft())
-        {
+        } else if (u == u.getParent().getLeft()) {
             u.getParent().setLeft(v);
-        }
-        else{
+        } else {
             u.getParent().setRight(v);
         }
         v.setParent(u.getParent());

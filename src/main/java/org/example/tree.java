@@ -23,7 +23,7 @@ public abstract class tree {
         return contains(root,v);
     }
 
-    boolean contains(Node r, int v){
+    private boolean contains(Node r, int v){
         if (r == null){
             return false;
         }
@@ -41,7 +41,7 @@ public abstract class tree {
     int height(){
         return height(root);
     }
-    int height(Node r){
+    private int height(Node r){
        if (r == null) {
            return 0;
        }
